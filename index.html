@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的收藏册</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500;600&display=swap');
+
+:root {
+  --cream: #F7F3EC;
+  --cream-dark: #EDE7DA;
+  --paper: #FDFAF5;
+  --ink: #2A2118;
+  --ink2: #5A4E3C;
+  --ink3: #9A8E7C;
+  --shadow: rgba(60,40,20,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Noto Sans SC', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+.header {
+  background: #1C1812;
+  padding: 28px 32px 24px;
+  text-align: center;
+}
+.header-icon { font-size: 36px; margin-bottom: 8px; }
+.header-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: #F7F3EC;
+  letter-spacing: 0.06em;
+}
+.header-sub {
+  font-size: 11px;
+  color: #888;
+  letter-spacing: 0.12em;
+  margin-top: 4px;
+  text-transform: uppercase;
+}
+
+/* ── CARDS GRID ── */
+.grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 40px 32px;
+  max-width: 1000px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── APP CARD ── */
+.app-card {
+  background: var(--paper);
+  border-radius: 20px;
+  padding: 28px 26px 22px;
+  box-shadow: 0 4px 20px var(--shadow);
+  border: 1.5px solid rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  transition: transform 0.18s, box-shadow 0.18s;
+  position: relative;
+  overflow: hidden;
+}
+.app-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 5px;
+  border-radius: 20px 20px 0 0;
+}
+.card-sticker::before { background: linear-gradient(90deg, #3D5A44, #C4956A); }
+.card-mard::before   { background: linear-gradient(90deg, #8B4F9E, #C89AE0); }
+.card-skin::before   { background: linear-gradient(90deg, #C0634A, #E8A090); }
+
+.app-card:hover { transform: translateY(-4px); box-shadow: 0 10px 32px var(--shadow); }
+
+.card-icon { font-size: 40px; margin-bottom: 14px; }
+.card-title {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.card-sticker .card-title { color: #3D5A44; }
+.card-mard   .card-title { color: #8B4F9E; }
+.card-skin   .card-title { color: #C0634A; }
+
+.card-desc {
+  font-size: 12.5px;
+  color: var(--ink2);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  flex: 1;
+}
+
+.card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 20px;
+}
+.tag {
+  font-size: 10.5px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-weight: 500;
+  background: var(--cream-dark);
+  color: var(--ink2);
+}
+.card-sticker .tag { background: #D6E8D9; color: #2E5C38; }
+.card-mard   .tag { background: #EEE0F5; color: #6B3A88; }
+.card-skin   .tag { background: #F5E0D8; color: #924027; }
+
+.open-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.open-btn:hover { opacity: 0.88; transform: scale(0.98); }
+.open-btn:active { transform: scale(0.96); }
+.card-sticker .open-btn { background: #3D5A44; color: #fff; }
+.card-mard   .open-btn { background: #8B4F9E; color: #fff; }
+.card-skin   .open-btn { background: #C0634A; color: #fff; }
+
+.open-btn.not-set {
+  background: var(--cream-dark);
+  color: var(--ink3);
+  cursor: default;
+}
+
+.url-input-wrap {
+  margin-top: 10px;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.url-input {
+  flex: 1;
+  padding: 7px 10px;
+  border: 1.5px solid var(--cream-dark);
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: 'Noto Sans SC', sans-serif;
+  color: var(--ink);
+  background: var(--cream);
+  outline: none;
+  transition: border 0.15s;
+}
+.url-input:focus { border-color: #888; }
+.save-btn {
+  padding: 7px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-family: 'Noto Sans SC', sans-serif;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--ink);
+  color: #fff;
+  transition: opacity 0.15s;
+}
+.save-btn:hover { opacity: 0.8; }
+.url-hint { font-size: 10px; color: var(--ink3); margin-top: 5px; }
+
+/* ── FOOTER ── */
+.footer {
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+/* ── TOAST ── */
+.toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 999; display: flex; flex-direction: column; gap: 7px; }
+.toast { background: var(--ink); color: var(--cream); padding: 9px 14px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); animation: slideIn 0.18s ease; }
+.toast.success { background: #3D5A44; }
+@keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-icon">📚</div>
+  <div class="header-title">我的收藏册</div>
+  <div class="header-sub">MY COLLECTIONS</div>
+</div>
+
+<div class="grid">
+
+  <!-- STICKER -->
+  <div class="app-card card-sticker">
+    <div class="card-icon">🌿</div>
+    <div class="card-title">造景贴纸收藏册</div>
+    <div class="card-desc">记录购买的造景贴纸，追踪到货状态、集运包裹，支持捆绑购买平摊价格。</div>
+    <div class="card-tags">
+      <span class="tag">贴纸记录</span>
+      <span class="tag">集运管理</span>
+      <span class="tag">捆绑购买</span>
+      <span class="tag">GitHub 同步</span>
+    </div>
+    <a id="btn-sticker" class="open-btn not-set" href="#" target="_blank">填写网址后开启 →</a>
+    <div class="url-input-wrap">
+      <input class="url-input" id="url-sticker" placeholder="https://fhebeozy-cpu.github.io/sticker-collection" type="url">
+      <button class="save-btn" onclick="saveUrl('sticker')">保存</button>
+    </div>
+    <div class="url-hint" id="hint-sticker">填入你的 GitHub Pages 网址</div>
+  </div>
+
+  <!-- MARD -->
+  <div class="app-card card-mard">
+    <div class="card-icon">🟣</div>
+    <div class="card-title">Mard 拼豆管理</div>
+    <div class="card-desc">管理 291 个 Mard 色号，记录进货、分装使用、库存颗数，支持批量粘贴导入。</div>
+    <div class="card-tags">
+      <span class="tag">291 色号</span>
+      <span class="tag">进货记录</span>
+      <span class="tag">库存颗数</span>
+      <span class="tag">卖家管理</span>
+    </div>
+    <a id="btn-mard" class="open-btn not-set" href="#" target="_blank">填写网址后开启 →</a>
+    <div class="url-input-wrap">
+      <input class="url-input" id="url-mard" placeholder="https://fhebeozy-cpu.github.io/mard-beads" type="url">
+      <button class="save-btn" onclick="saveUrl('mard')">保存</button>
+    </div>
+    <div class="url-hint" id="hint-mard">填入你的 GitHub Pages 网址</div>
+  </div>
+
+  <!-- SKINCARE -->
+  <div class="app-card card-skin">
+    <div class="card-icon">🌸</div>
+    <div class="card-title">美妆护肤库存</div>
+    <div class="card-desc">追踪护肤品批次、使用记录、补货提醒，内建划算计算器和消费 Dashboard。</div>
+    <div class="card-tags">
+      <span class="tag">批次追踪</span>
+      <span class="tag">使用记录</span>
+      <span class="tag">进货管理</span>
+      <span class="tag">划算计算</span>
+    </div>
+    <a id="btn-skin" class="open-btn not-set" href="#" target="_blank">填写网址后开启 →</a>
+    <div class="url-input-wrap">
+      <input class="url-input" id="url-skin" placeholder="https://fhebeozy-cpu.github.io/skincare" type="url">
+      <button class="save-btn" onclick="saveUrl('skin')">保存</button>
+    </div>
+    <div class="url-hint" id="hint-skin">填入你的 GitHub Pages 网址</div>
+  </div>
+
+</div>
+
+<div class="footer">网址保存在本地，不会上传 · 点击卡片按钮在新标签页打开</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+const APPS = ['sticker', 'mard', 'skin'];
+
+function loadUrls() {
+  APPS.forEach(app => {
+    const saved = localStorage.getItem('hub_url_' + app);
+    if (saved) {
+      document.getElementById('url-' + app).value = saved;
+      setBtn(app, saved);
+    }
+  });
+}
+
+function saveUrl(app) {
+  const val = document.getElementById('url-' + app).value.trim();
+  if (!val) {
+    localStorage.removeItem('hub_url_' + app);
+    setBtn(app, '');
+    toast('已清除网址');
+    return;
+  }
+  // basic url validation
+  try { new URL(val); } catch(e) { toast('网址格式不正确', 'error'); return; }
+  localStorage.setItem('hub_url_' + app, val);
+  setBtn(app, val);
+  toast('已保存 ✓', 'success');
+}
+
+function setBtn(app, url) {
+  const btn = document.getElementById('btn-' + app);
+  const hint = document.getElementById('hint-' + app);
+  if (url) {
+    btn.href = url;
+    btn.textContent = '打开 →';
+    btn.classList.remove('not-set');
+    hint.textContent = url;
+  } else {
+    btn.href = '#';
+    btn.textContent = '填写网址后开启 →';
+    btn.classList.add('not-set');
+    hint.textContent = '填入你的 GitHub Pages 网址';
+  }
+}
+
+// prevent not-set btn from navigating
+document.querySelectorAll('.open-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    if (btn.classList.contains('not-set')) e.preventDefault();
+  });
+});
+
+// save on Enter
+document.querySelectorAll('.url-input').forEach(input => {
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const app = input.id.replace('url-', '');
+      saveUrl(app);
+    }
+  });
+});
+
+function toast(msg, type = '') {
+  const c = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.textContent = msg;
+  c.appendChild(t);
+  setTimeout(() => t.remove(), 2500);
+}
+
+loadUrls();
+</script>
+</body>
+</html>
