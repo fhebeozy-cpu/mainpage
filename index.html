@@ -199,6 +199,28 @@ body {
 .toast { background: var(--ink); color: var(--cream); padding: 9px 14px; border-radius: 8px; font-size: 12px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); animation: slideIn 0.18s ease; }
 .toast.success { background: #3D5A44; }
 @keyframes slideIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+/* ── OVERLAY / MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(20,15,8,0.6);z-index:200;align-items:center;justify-content:center;padding:20px;}
+.overlay.open{display:flex;}
+.modal{background:var(--paper);border-radius:16px;padding:28px;width:100%;max-width:460px;box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto;}
+.modal-title{font-family:'Noto Serif SC',serif;font-size:18px;font-weight:700;color:var(--ink);margin-bottom:6px;}
+.modal-sub{font-size:11px;color:var(--ink3);margin-bottom:20px;line-height:1.6;}
+.form-section{margin-bottom:18px;padding-bottom:18px;border-bottom:1.5px solid var(--cream-dark);}
+.form-section:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+.form-section h3{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink3);margin-bottom:10px;font-weight:600;}
+.form-label{display:block;font-size:11px;color:var(--ink2);margin-bottom:4px;font-weight:500;}
+.form-input{width:100%;padding:8px 11px;border:1.5px solid var(--cream-dark);border-radius:8px;background:var(--cream);font-size:12px;font-family:'Noto Sans SC',sans-serif;color:var(--ink);outline:none;transition:border 0.15s;margin-bottom:10px;}
+.form-input:focus{border-color:#888;background:var(--paper);}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1.5px solid var(--cream-dark);}
+.btn{border:none;border-radius:8px;padding:9px 18px;font-family:'Noto Sans SC',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-primary:hover{opacity:0.8;}
+.btn-ghost{background:var(--cream-dark);color:var(--ink2);}
+.btn-ghost:hover{background:#e0d8cc;}
+.sync-status{font-size:11px;margin-top:6px;min-height:16px;}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px;vertical-align:middle;}
+.dot-ok{background:#4CAF50;}.dot-warn{background:#F5C842;}.dot-err{background:#C0543A;}.dot-idle{background:#aaa;}
 </style>
 </head>
 <body>
@@ -207,6 +229,7 @@ body {
   <div class="header-icon">📚</div>
   <div class="header-title">我的收藏册</div>
   <div class="header-sub">MY COLLECTIONS</div>
+  <button onclick="openSettings()" style="margin-top:14px;background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.20);color:#ccc;padding:7px 16px;border-radius:8px;font-size:12px;font-family:'Noto Sans SC',sans-serif;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='rgba(255,255,255,0.18)'" onmouseout="this.style.background='rgba(255,255,255,0.10)'">⚙ GitHub 设置</button>
 </div>
 
 <div class="grid">
@@ -270,81 +293,139 @@ body {
 
 </div>
 
-<div class="footer">网址保存在本地，不会上传 · 点击卡片按钮在新标签页打开</div>
+<div class="footer">网址保存在 GitHub · Token 仅存本地浏览器</div>
 
 <div class="toast-container" id="toastContainer"></div>
 
 <script>
 const APPS = ['sticker', 'mard', 'skin'];
 
-function loadUrls() {
-  APPS.forEach(app => {
-    const saved = localStorage.getItem('hub_url_' + app);
-    if (saved) {
-      document.getElementById('url-' + app).value = saved;
-      setBtn(app, saved);
-    }
-  });
+let cfg = { owner: 'fhebeozy-cpu', token: '', repo: 'my-collections-hub', path: 'data/urls.json' };
+let ghSHA = null;
+let urlData = { sticker: '', mard: '', skin: '' };
+
+function init() {
+  const savedCfg = localStorage.getItem('hub_cfg');
+  if (savedCfg) cfg = { ...cfg, ...JSON.parse(savedCfg) };
+  cfg.token = localStorage.getItem('hub_token') || '';
+  APPS.forEach(app => { const v = localStorage.getItem('hub_url_' + app); if (v) urlData[app] = v; });
+  renderAll();
+  if (cfg.token && cfg.owner && cfg.repo) pullUrls(true);
 }
+
+function renderAll() { APPS.forEach(app => setBtn(app, urlData[app])); }
 
 function saveUrl(app) {
   const val = document.getElementById('url-' + app).value.trim();
-  if (!val) {
-    localStorage.removeItem('hub_url_' + app);
-    setBtn(app, '');
-    toast('已清除网址');
-    return;
-  }
-  // basic url validation
-  try { new URL(val); } catch(e) { toast('网址格式不正确', 'error'); return; }
+  try { if (val) new URL(val); } catch(e) { toast('网址格式不正确'); return; }
+  urlData[app] = val;
   localStorage.setItem('hub_url_' + app, val);
   setBtn(app, val);
-  toast('已保存 ✓', 'success');
+  toast('已保存，同步中…');
+  pushUrls();
 }
 
 function setBtn(app, url) {
   const btn = document.getElementById('btn-' + app);
   const hint = document.getElementById('hint-' + app);
+  const input = document.getElementById('url-' + app);
   if (url) {
-    btn.href = url;
-    btn.textContent = '打开 →';
-    btn.classList.remove('not-set');
-    hint.textContent = url;
+    btn.href = url; btn.textContent = '打开 →'; btn.classList.remove('not-set');
+    hint.textContent = url; input.value = url;
   } else {
-    btn.href = '#';
-    btn.textContent = '填写网址后开启 →';
-    btn.classList.add('not-set');
+    btn.href = '#'; btn.textContent = '填写网址后开启 →'; btn.classList.add('not-set');
     hint.textContent = '填入你的 GitHub Pages 网址';
   }
 }
 
-// prevent not-set btn from navigating
-document.querySelectorAll('.open-btn').forEach(btn => {
-  btn.addEventListener('click', e => {
-    if (btn.classList.contains('not-set')) e.preventDefault();
-  });
-});
+async function pullUrls(silent) {
+  if (!cfg.token || !cfg.owner || !cfg.repo) { if (!silent) openSettings(); return; }
+  setSyncStatus('idle', '拉取中…');
+  try {
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+    const res = await fetch(url, { headers: { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github.v3+json' } });
+    if (res.status === 404) { setSyncStatus('warn', '文件不存在，保存后自动创建'); return; }
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const d = await res.json();
+    ghSHA = d.sha;
+    const bytes = Uint8Array.from(atob(d.content.replace(/\n/g, '')), c => c.charCodeAt(0));
+    const parsed = JSON.parse(new TextDecoder().decode(bytes));
+    urlData = { ...urlData, ...parsed };
+    APPS.forEach(app => localStorage.setItem('hub_url_' + app, urlData[app] || ''));
+    renderAll();
+    setSyncStatus('ok', `已同步 ${new Date().toLocaleTimeString('zh-CN')}`);
+    if (!silent) toast('拉取成功 ✓');
+  } catch(e) { setSyncStatus('err', '拉取失败：' + e.message); if (!silent) toast('拉取失败'); }
+}
 
-// save on Enter
-document.querySelectorAll('.url-input').forEach(input => {
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
-      const app = input.id.replace('url-', '');
-      saveUrl(app);
+async function pushUrls() {
+  if (!cfg.token || !cfg.owner || !cfg.repo) { openSettings(); return; }
+  setSyncStatus('idle', '保存中…');
+  try {
+    const url = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cfg.path}`;
+    if (!ghSHA) {
+      const chk = await fetch(url, { headers: { 'Authorization': `token ${cfg.token}`, 'Accept': 'application/vnd.github.v3+json' } });
+      if (chk.ok) { const d = await chk.json(); ghSHA = d.sha; }
     }
-  });
+    const json = JSON.stringify(urlData, null, 2);
+    const b64 = btoa(String.fromCharCode(...new TextEncoder().encode(json)));
+    const body = { message: `更新收藏册网址 ${new Date().toLocaleString('zh-CN')}`, content: b64, ...(ghSHA ? { sha: ghSHA } : {}) };
+    const res = await fetch(url, { method: 'PUT', headers: { 'Authorization': `token ${cfg.token}`, 'Content-Type': 'application/json', 'Accept': 'application/vnd.github.v3+json' }, body: JSON.stringify(body) });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.message || `HTTP ${res.status}`); }
+    const result = await res.json();
+    ghSHA = result.content.sha;
+    setSyncStatus('ok', `已保存 ${new Date().toLocaleTimeString('zh-CN')}`);
+  } catch(e) { setSyncStatus('err', '保存失败：' + e.message); toast('保存失败：' + e.message); }
+}
+
+function openSettings() {
+  document.getElementById('cfg-owner').value = cfg.owner;
+  document.getElementById('cfg-token').value = cfg.token;
+  document.getElementById('cfg-repo').value = cfg.repo;
+  document.getElementById('cfg-path').value = cfg.path;
+  document.getElementById('settingsOverlay').classList.add('open');
+}
+
+function closeSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+
+function saveCfg() {
+  cfg.owner = document.getElementById('cfg-owner').value.trim();
+  cfg.token = document.getElementById('cfg-token').value.trim();
+  cfg.repo  = document.getElementById('cfg-repo').value.trim();
+  cfg.path  = document.getElementById('cfg-path').value.trim();
+  localStorage.setItem('hub_cfg', JSON.stringify({ owner: cfg.owner, repo: cfg.repo, path: cfg.path }));
+  localStorage.setItem('hub_token', cfg.token);
+  closeSettings();
+  toast('设置已保存 ✓');
+  if (cfg.token && cfg.owner) pullUrls(true);
+}
+
+function setSyncStatus(state, msg) {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'dot ' + (state==='ok'?'dot-ok':state==='warn'?'dot-warn':state==='err'?'dot-err':'dot-idle');
+  document.getElementById('syncMsg').textContent = msg;
+}
+
+document.querySelectorAll('.open-btn').forEach(btn => {
+  btn.addEventListener('click', e => { if (btn.classList.contains('not-set')) e.preventDefault(); });
+});
+document.querySelectorAll('.url-input').forEach(input => {
+  input.addEventListener('keydown', e => { if (e.key === 'Enter') saveUrl(input.id.replace('url-', '')); });
+});
+document.getElementById('settingsOverlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('settingsOverlay')) closeSettings();
 });
 
-function toast(msg, type = '') {
+function toast(msg) {
   const c = document.getElementById('toastContainer');
   const t = document.createElement('div');
-  t.className = 'toast' + (type ? ' ' + type : '');
+  t.className = 'toast';
   t.textContent = msg;
   c.appendChild(t);
   setTimeout(() => t.remove(), 2500);
 }
 
-loadUrls();
+init();
 </script>
 </body>
 </html>
