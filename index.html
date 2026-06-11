@@ -297,6 +297,41 @@ body {
 
 <div class="toast-container" id="toastContainer"></div>
 
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <div class="modal-title">⚙ GitHub 设置</div>
+    <div class="modal-sub">网址数据保存到你的 GitHub repo，换设备也能读取。Token 只存本地，不上传。</div>
+    <div class="form-section">
+      <h3>GitHub 认证</h3>
+      <label class="form-label">用户名</label>
+      <input class="form-input" id="cfg-owner" placeholder="fhebeozy-cpu">
+      <label class="form-label">Personal Access Token（repo 权限）</label>
+      <input class="form-input" id="cfg-token" type="password" placeholder="ghp_xxxxxxxxxxxx">
+      <a href="https://github.com/settings/tokens" target="_blank" style="font-size:10px;color:#888">点此生成 Token →</a>
+    </div>
+    <div class="form-section">
+      <h3>存储位置</h3>
+      <label class="form-label">仓库名</label>
+      <input class="form-input" id="cfg-repo" placeholder="my-collections-hub">
+      <label class="form-label">文件路径</label>
+      <input class="form-input" id="cfg-path" placeholder="data/urls.json">
+    </div>
+    <div class="form-section">
+      <h3>同步</h3>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" onclick="pullUrls()" style="flex:1">↓ 从 GitHub 拉取</button>
+        <button class="btn btn-ghost" onclick="pushUrls()" style="flex:1">↑ 保存到 GitHub</button>
+      </div>
+      <div class="sync-status"><span class="dot dot-idle" id="syncDot"></span><span id="syncMsg">未同步</span></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeSettings()">关闭</button>
+      <button class="btn btn-primary" onclick="saveCfg()">保存设置</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const APPS = ['sticker', 'mard', 'skin'];
 
